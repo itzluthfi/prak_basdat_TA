@@ -165,13 +165,54 @@ VALUES (
 
 -- Insert data KARYAWAN
 INSERT INTO
-    karyawan (nama_karyawan, posisi, shift_karyawan, username, password, status)
-VALUES 
-    ('Ahmad Ridwan', 'Manager', 'Pagi', 'admin', 'admin123', 'Aktif'),
-    ('Siti Nurhaliza', 'Admin', 'Sore', 'staff', 'staff123', 'Aktif'),
-    ('Budi Santoso', 'Manager', 'Pagi', 'manager', 'manager123', 'Aktif'),
-    ('Dewi Marlina', 'Staff', 'Pagi', 'dewi', 'password123', 'Aktif'),
-    ('Joko Supriyadi', 'Staff', 'Sore', 'joko', 'password123', 'Aktif');
+    karyawan (
+        nama_karyawan,
+        posisi,
+        shift_karyawan,
+        username,
+        password,
+        status
+    )
+VALUES (
+        'Ahmad Ridwan',
+        'Manager',
+        'Pagi',
+        'admin',
+        'admin123',
+        'Aktif'
+    ),
+    (
+        'Siti Nurhaliza',
+        'Admin',
+        'Sore',
+        'staff',
+        'staff123',
+        'Aktif'
+    ),
+    (
+        'Budi Santoso',
+        'Manager',
+        'Pagi',
+        'manager',
+        'manager123',
+        'Aktif'
+    ),
+    (
+        'Dewi Marlina',
+        'Staff',
+        'Pagi',
+        'dewi',
+        'password123',
+        'Aktif'
+    ),
+    (
+        'Joko Supriyadi',
+        'Staff',
+        'Sore',
+        'joko',
+        'password123',
+        'Aktif'
+    );
 
 -- Insert data KATEGORI_BARANG
 INSERT INTO
@@ -1016,31 +1057,41 @@ SELECT COUNT(*) as record_count FROM v_kinerja_karyawan_detail;
 -- Keep only the corrected version below
 
 -- Update existing karyawan records with proper data
-UPDATE karyawan SET 
-    username = 'admin', 
+UPDATE karyawan
+SET
+    username = 'admin',
     password = 'admin123',
     posisi = 'Manager',
     status = 'Aktif'
-WHERE nama_karyawan = 'Ahmad Ridwan';
+WHERE
+    nama_karyawan = 'Ahmad Ridwan';
 
-UPDATE karyawan SET 
-    username = 'staff', 
+UPDATE karyawan
+SET
+    username = 'staff',
     password = 'staff123',
     posisi = 'Admin',
     status = 'Aktif'
-WHERE nama_karyawan = 'Siti Nurhaliza';
+WHERE
+    nama_karyawan = 'Siti Nurhaliza';
 
-UPDATE karyawan SET 
-    username = 'manager', 
+UPDATE karyawan
+SET
+    username = 'manager',
     password = 'manager123',
     posisi = 'Manager',
     status = 'Aktif'
-WHERE nama_karyawan = 'Budi Santoso';
+WHERE
+    nama_karyawan = 'Budi Santoso';
 
 -- Update other employees with automatic username
-UPDATE karyawan SET 
-    username = LOWER(REPLACE(nama_karyawan, ' ', '')),
+UPDATE karyawan
+SET
+    username = LOWER(
+        REPLACE (nama_karyawan, ' ', '')
+    ),
     password = 'password123',
     posisi = 'Staff',
     status = 'Aktif'
-WHERE username IS NULL;
+WHERE
+    username IS NULL;

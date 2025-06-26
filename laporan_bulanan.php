@@ -14,21 +14,23 @@ $filter_month = isset($_GET['month']) ? $_GET['month'] : $current_month;
 
 // Query untuk laporan bulanan
 $query = "SELECT 
-    YEAR(t.tanggal_sewa) as tahun,
-    MONTH(t.tanggal_sewa) as bulan,
-    MONTHNAME(t.tanggal_sewa) as nama_bulan,
+    YEAR(t.tanggal_pinjam) as tahun,
+    MONTH(t.tanggal_pinjam) as bulan,
+    MONTHNAME(t.tanggal_pinjam) as nama_bulan,
     COUNT(t.id_transaksi) as total_transaksi,
-    SUM(CASE WHEN t.status = 'Selesai' THEN 1 ELSE 0 END) as transaksi_selesai,
-    SUM(CASE WHEN t.status = 'Aktif' THEN 1 ELSE 0 END) as transaksi_aktif,
+    SUM(CASE WHEN t.status_bayar = 'Lunas' THEN 1 ELSE 0 END) as transaksi_lunas,
+    SUM(CASE WHEN t.status_bayar = 'Belum Lunas' THEN 1 ELSE 0 END) as transaksi_belum_lunas,
     COUNT(DISTINCT t.id_pelanggan) as pelanggan_unik,
     SUM(dt.jumlah) as total_barang_disewa,
     SUM(dt.jumlah * dt.harga_satuan) as total_pendapatan,
+    SUM(t.denda) as total_denda,
     AVG(dt.jumlah * dt.harga_satuan) as rata_pendapatan_per_transaksi,
-    (SUM(CASE WHEN t.status = 'Selesai' THEN 1 ELSE 0 END) / COUNT(t.id_transaksi) * 100) as persentase_selesai
+    (SUM(CASE WHEN t.status_bayar = 'Lunas' THEN 1 ELSE 0 END) / NULLIF(COUNT(t.id_transaksi), 0) * 100) as persentase_lunas,
+    AVG(t.rating) as rata_rata_rating
 FROM transaksi t
 JOIN detail_transaksi dt ON t.id_transaksi = dt.id_transaksi
-WHERE YEAR(t.tanggal_sewa) = :filter_year
-GROUP BY YEAR(t.tanggal_sewa), MONTH(t.tanggal_sewa)
+WHERE YEAR(t.tanggal_pinjam) = :filter_year
+GROUP BY YEAR(t.tanggal_pinjam), MONTH(t.tanggal_pinjam)
 ORDER BY tahun DESC, bulan DESC";
 
 $stmt = $db->prepare($query);
@@ -38,14 +40,15 @@ $monthly_results = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Query untuk data bulan tertentu (detail)
 $detail_query = "SELECT 
-    DATE(t.tanggal_sewa) as tanggal,
+    DATE(t.tanggal_pinjam) as tanggal,
     COUNT(t.id_transaksi) as transaksi_harian,
-    SUM(dt.jumlah * dt.harga_satuan) as pendapatan_harian
+    SUM(dt.jumlah * dt.harga_satuan) as pendapatan_harian,
+    SUM(t.denda) as denda_harian
 FROM transaksi t
 JOIN detail_transaksi dt ON t.id_transaksi = dt.id_transaksi
-WHERE YEAR(t.tanggal_sewa) = :filter_year 
-AND MONTH(t.tanggal_sewa) = :filter_month
-GROUP BY DATE(t.tanggal_sewa)
+WHERE YEAR(t.tanggal_pinjam) = :filter_year 
+AND MONTH(t.tanggal_pinjam) = :filter_month
+GROUP BY DATE(t.tanggal_pinjam)
 ORDER BY tanggal";
 
 $detail_stmt = $db->prepare($detail_query);
@@ -64,15 +67,15 @@ FROM transaksi t
 JOIN detail_transaksi dt ON t.id_transaksi = dt.id_transaksi
 JOIN (
     SELECT 
-        MONTH(tanggal_sewa) as bulan,
+        MONTH(tanggal_pinjam) as bulan,
         COUNT(*) as transaksi_per_bulan,
         SUM(dt2.jumlah * dt2.harga_satuan) as pendapatan_per_bulan
     FROM transaksi t2
     JOIN detail_transaksi dt2 ON t2.id_transaksi = dt2.id_transaksi
-    WHERE YEAR(t2.tanggal_sewa) = :filter_year
-    GROUP BY MONTH(t2.tanggal_sewa)
+    WHERE YEAR(t2.tanggal_pinjam) = :filter_year
+    GROUP BY MONTH(t2.tanggal_pinjam)
 ) monthly_stats
-WHERE YEAR(t.tanggal_sewa) = :filter_year";
+WHERE YEAR(t.tanggal_pinjam) = :filter_year";
 
 $year_stats_stmt = $db->prepare($year_stats_query);
 $year_stats_stmt->bindParam(':filter_year', $filter_year, PDO::PARAM_INT);
@@ -80,7 +83,7 @@ $year_stats_stmt->execute();
 $year_stats = $year_stats_stmt->fetch(PDO::FETCH_ASSOC);
 
 // Get available years for dropdown
-$years_query = "SELECT DISTINCT YEAR(tanggal_sewa) as tahun FROM transaksi ORDER BY tahun DESC";
+$years_query = "SELECT DISTINCT YEAR(tanggal_pinjam) as tahun FROM transaksi ORDER BY tahun DESC";
 $years_stmt = $db->prepare($years_query);
 $years_stmt->execute();
 $available_years = $years_stmt->fetchAll(PDO::FETCH_ASSOC);

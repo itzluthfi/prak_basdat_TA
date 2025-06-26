@@ -89,9 +89,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 $query = "SELECT 
     p.*,
     COUNT(t.id_transaksi) as total_transaksi,
-    SUM(CASE WHEN t.status = 'Aktif' THEN 1 ELSE 0 END) as transaksi_aktif,
+    SUM(CASE WHEN t.status_bayar = 'Belum Lunas' THEN 1 ELSE 0 END) as transaksi_aktif,
     COALESCE(SUM(dt.jumlah * dt.harga_satuan), 0) as total_nilai_transaksi,
-    MAX(t.tanggal_sewa) as transaksi_terakhir
+    MAX(t.tanggal_pinjam) as transaksi_terakhir
 FROM pelanggan p
 LEFT JOIN transaksi t ON p.id_pelanggan = t.id_pelanggan
 LEFT JOIN detail_transaksi dt ON t.id_transaksi = dt.id_transaksi

@@ -71,7 +71,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         // Check if item is being used in any active transaction
         $check_query = "SELECT COUNT(*) as count FROM detail_transaksi dt 
                        JOIN transaksi t ON dt.id_transaksi = t.id_transaksi 
-                       WHERE dt.id_barang = :id_barang AND t.status = 'Aktif'";
+                       WHERE dt.id_barang = :id_barang AND t.status_bayar = 'Belum Lunas'";
         $check_stmt = $db->prepare($check_query);
         $check_stmt->bindParam(':id_barang', $id_barang);
         $check_stmt->execute();

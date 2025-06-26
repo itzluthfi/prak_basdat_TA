@@ -9,16 +9,19 @@ $query = "SELECT
     k.id_karyawan,
     k.nama_karyawan,
     k.posisi,
+    k.shift_karyawan,
     COUNT(t.id_transaksi) as total_transaksi,
-    SUM(CASE WHEN t.status = 'Selesai' THEN 1 ELSE 0 END) as transaksi_selesai,
-    SUM(CASE WHEN t.status = 'Aktif' THEN 1 ELSE 0 END) as transaksi_aktif,
+    SUM(CASE WHEN t.status_bayar = 'Lunas' THEN 1 ELSE 0 END) as transaksi_lunas,
+    SUM(CASE WHEN t.status_bayar = 'Belum Lunas' THEN 1 ELSE 0 END) as transaksi_belum_lunas,
     SUM(dt.jumlah * dt.harga_satuan) as total_pendapatan,
-    AVG(DATEDIFF(COALESCE(t.tanggal_kembali, CURDATE()), t.tanggal_sewa)) as rata_rata_durasi,
-    (SUM(CASE WHEN t.status = 'Selesai' THEN 1 ELSE 0 END) / COUNT(t.id_transaksi) * 100) as persentase_selesai
+    AVG(DATEDIFF(t.tanggal_kembali, t.tanggal_pinjam)) as rata_rata_durasi,
+    (SUM(CASE WHEN t.status_bayar = 'Lunas' THEN 1 ELSE 0 END) / NULLIF(COUNT(t.id_transaksi), 0) * 100) as persentase_lunas,
+    AVG(t.rating) as rata_rata_rating
 FROM karyawan k
 LEFT JOIN transaksi t ON k.id_karyawan = t.id_karyawan
 LEFT JOIN detail_transaksi dt ON t.id_transaksi = dt.id_transaksi
-GROUP BY k.id_karyawan, k.nama_karyawan, k.posisi
+WHERE k.status = 'Aktif'
+GROUP BY k.id_karyawan, k.nama_karyawan, k.posisi, k.shift_karyawan
 ORDER BY total_pendapatan DESC";
 
 $stmt = $db->prepare($query);
@@ -38,8 +41,8 @@ LEFT JOIN (
         id_karyawan,
         COUNT(*) as transaksi_per_bulan
     FROM transaksi 
-    WHERE MONTH(tanggal_sewa) = MONTH(CURDATE())
-    AND YEAR(tanggal_sewa) = YEAR(CURDATE())
+    WHERE MONTH(tanggal_pinjam) = MONTH(CURDATE())
+    AND YEAR(tanggal_pinjam) = YEAR(CURDATE())
     GROUP BY id_karyawan
 ) monthly_stats ON k.id_karyawan = monthly_stats.id_karyawan";
 

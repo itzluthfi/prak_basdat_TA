@@ -23,6 +23,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $username = trim($_POST['username']);
         $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
         $posisi = trim($_POST['posisi']);
+        $shift_karyawan = $_POST['shift_karyawan'];
         $status = $_POST['status'];
 
         // Check if username already exists
@@ -36,13 +37,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $message = 'Username sudah digunakan!';
             $message_type = 'warning';
         } else {
-            $query = "INSERT INTO karyawan (nama_karyawan, username, password, posisi, status) 
-                      VALUES (:nama_karyawan, :username, :password, :posisi, :status)";
+            $query = "INSERT INTO karyawan (nama_karyawan, username, password, posisi, shift_karyawan, status) 
+                      VALUES (:nama_karyawan, :username, :password, :posisi, :shift_karyawan, :status)";
             $stmt = $db->prepare($query);
             $stmt->bindParam(':nama_karyawan', $nama_karyawan);
             $stmt->bindParam(':username', $username);
             $stmt->bindParam(':password', $password);
             $stmt->bindParam(':posisi', $posisi);
+            $stmt->bindParam(':shift_karyawan', $shift_karyawan);
             $stmt->bindParam(':status', $status);
 
             if ($stmt->execute()) {
@@ -58,6 +60,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $nama_karyawan = trim($_POST['nama_karyawan']);
         $username = trim($_POST['username']);
         $posisi = trim($_POST['posisi']);
+        $shift_karyawan = $_POST['shift_karyawan'];
         $status = $_POST['status'];
 
         // Check if username is taken by another employee
@@ -76,13 +79,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 // Update with password
                 $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
                 $query = "UPDATE karyawan SET nama_karyawan = :nama_karyawan, username = :username, 
-                          password = :password, posisi = :posisi, status = :status WHERE id_karyawan = :id_karyawan";
+                          password = :password, posisi = :posisi, shift_karyawan = :shift_karyawan, status = :status WHERE id_karyawan = :id_karyawan";
                 $stmt = $db->prepare($query);
                 $stmt->bindParam(':password', $password);
             } else {
                 // Update without password
                 $query = "UPDATE karyawan SET nama_karyawan = :nama_karyawan, username = :username, 
-                          posisi = :posisi, status = :status WHERE id_karyawan = :id_karyawan";
+                          posisi = :posisi, shift_karyawan = :shift_karyawan, status = :status WHERE id_karyawan = :id_karyawan";
                 $stmt = $db->prepare($query);
             }
 
@@ -90,6 +93,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $stmt->bindParam(':nama_karyawan', $nama_karyawan);
             $stmt->bindParam(':username', $username);
             $stmt->bindParam(':posisi', $posisi);
+            $stmt->bindParam(':shift_karyawan', $shift_karyawan);
             $stmt->bindParam(':status', $status);
 
             if ($stmt->execute()) {
@@ -104,14 +108,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $id_karyawan = (int)$_POST['id_karyawan'];
 
         // Check if employee has active transactions
-        $check_query = "SELECT COUNT(*) as count FROM transaksi WHERE id_karyawan = :id_karyawan AND status = 'Aktif'";
+        $check_query = "SELECT COUNT(*) as count FROM transaksi WHERE id_karyawan = :id_karyawan AND status_bayar = 'Belum Lunas'";
         $check_stmt = $db->prepare($check_query);
         $check_stmt->bindParam(':id_karyawan', $id_karyawan);
         $check_stmt->execute();
         $check_result = $check_stmt->fetch(PDO::FETCH_ASSOC);
 
         if ($check_result['count'] > 0) {
-            $message = 'Tidak dapat menghapus karyawan yang memiliki transaksi aktif!';
+            $message = 'Tidak dapat menghapus karyawan yang memiliki transaksi belum lunas!';
             $message_type = 'warning';
         } else {
             $query = "DELETE FROM karyawan WHERE id_karyawan = :id_karyawan";
@@ -133,13 +137,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 $query = "SELECT 
     k.*,
     COUNT(t.id_transaksi) as total_transaksi,
-    SUM(CASE WHEN t.status = 'Aktif' THEN 1 ELSE 0 END) as transaksi_aktif,
+    SUM(CASE WHEN t.status_bayar = 'Belum Lunas' THEN 1 ELSE 0 END) as transaksi_aktif,
     COALESCE(SUM(dt.jumlah * dt.harga_satuan), 0) as total_nilai_transaksi,
-    MAX(t.tanggal_sewa) as transaksi_terakhir
+    MAX(t.tanggal_pinjam) as transaksi_terakhir
 FROM karyawan k
 LEFT JOIN transaksi t ON k.id_karyawan = t.id_karyawan
 LEFT JOIN detail_transaksi dt ON t.id_transaksi = dt.id_transaksi
-GROUP BY k.id_karyawan, k.nama_karyawan, k.username, k.posisi, k.status, k.last_login
+GROUP BY k.id_karyawan, k.nama_karyawan, k.username, k.posisi, k.shift_karyawan, k.status, k.last_login
 ORDER BY k.nama_karyawan";
 
 $stmt = $db->prepare($query);
@@ -309,6 +313,7 @@ $karyawan_list = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                         <th>Nama Karyawan</th>
                                         <th>Username</th>
                                         <th>Posisi</th>
+                                        <th>Shift</th>
                                         <th>Status</th>
                                         <th>Total Transaksi</th>
                                         <th>Nilai Transaksi</th>
@@ -348,6 +353,11 @@ $karyawan_list = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                                 ?>
                                                 <span class="badge <?= $posisi_class ?>">
                                                     <?= htmlspecialchars($karyawan['posisi']) ?>
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-<?= $karyawan['shift_karyawan'] == 'Pagi' ? 'warning' : 'info' ?>">
+                                                    <?= htmlspecialchars($karyawan['shift_karyawan']) ?>
                                                 </span>
                                             </td>
                                             <td>
@@ -433,32 +443,41 @@ $karyawan_list = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                 <label for="add_password" class="form-label">Password *</label>
                                 <input type="password" class="form-control" id="add_password" name="password" required>
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="add_posisi" class="form-label">Posisi *</label>
-                                <select class="form-select" id="add_posisi" name="posisi" required>
-                                    <option value="">Pilih Posisi</option>
-                                    <option value="Manager">Manager</option>
-                                    <option value="Admin">Admin</option>
-                                    <option value="Staff">Staff</option>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="add_posisi" class="form-label">Posisi *</label>
+                                    <select class="form-select" id="add_posisi" name="posisi" required>
+                                        <option value="">Pilih Posisi</option>
+                                        <option value="Manager">Manager</option>
+                                        <option value="Admin">Admin</option>
+                                        <option value="Staff">Staff</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="add_shift_karyawan" class="form-label">Shift *</label>
+                                    <select class="form-select" id="add_shift_karyawan" name="shift_karyawan" required>
+                                        <option value="">Pilih Shift</option>
+                                        <option value="Pagi">Pagi</option>
+                                        <option value="Sore">Sore</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="add_status" class="form-label">Status *</label>
+                                <select class="form-select" id="add_status" name="status" required>
+                                    <option value="">Pilih Status</option>
+                                    <option value="Aktif">Aktif</option>
+                                    <option value="Nonaktif">Nonaktif</option>
                                 </select>
                             </div>
                         </div>
-
-                        <div class="mb-3">
-                            <label for="add_status" class="form-label">Status *</label>
-                            <select class="form-select" id="add_status" name="status" required>
-                                <option value="">Pilih Status</option>
-                                <option value="Aktif">Aktif</option>
-                                <option value="Nonaktif">Nonaktif</option>
-                            </select>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Simpan
+                            </button>
                         </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-save"></i> Simpan
-                        </button>
-                    </div>
                 </form>
             </div>
         </div>
@@ -491,17 +510,25 @@ $karyawan_list = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         </div>
 
                         <div class="row">
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-4 mb-3">
                                 <label for="edit_password" class="form-label">Password (kosongkan jika tidak diubah)</label>
                                 <input type="password" class="form-control" id="edit_password" name="password">
                             </div>
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-4 mb-3">
                                 <label for="edit_posisi" class="form-label">Posisi *</label>
                                 <select class="form-select" id="edit_posisi" name="posisi" required>
                                     <option value="">Pilih Posisi</option>
                                     <option value="Manager">Manager</option>
                                     <option value="Admin">Admin</option>
                                     <option value="Staff">Staff</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="edit_shift_karyawan" class="form-label">Shift *</label>
+                                <select class="form-select" id="edit_shift_karyawan" name="shift_karyawan" required>
+                                    <option value="">Pilih Shift</option>
+                                    <option value="Pagi">Pagi</option>
+                                    <option value="Sore">Sore</option>
                                 </select>
                             </div>
                         </div>
@@ -615,6 +642,7 @@ $karyawan_list = $stmt->fetchAll(PDO::FETCH_ASSOC);
             document.getElementById('edit_nama_karyawan').value = item.nama_karyawan;
             document.getElementById('edit_username').value = item.username;
             document.getElementById('edit_posisi').value = item.posisi;
+            document.getElementById('edit_shift_karyawan').value = item.shift_karyawan;
             document.getElementById('edit_status').value = item.status;
 
             var editModal = new bootstrap.Modal(document.getElementById('editModal'));

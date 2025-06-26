@@ -8,21 +8,22 @@ $db = $database->getConnection();
 $query = "SELECT 
     t.id_transaksi,
     p.nama_pelanggan,
-    t.tanggal_sewa,
+    t.tanggal_pinjam,
     t.tanggal_kembali,
-    DATEDIFF(t.tanggal_kembali, t.tanggal_sewa) as durasi_hari,
+    DATEDIFF(t.tanggal_kembali, t.tanggal_pinjam) as durasi_hari,
     COUNT(dt.id_detail) as jumlah_barang,
     SUM(dt.jumlah * dt.harga_satuan) as total_biaya,
+    t.denda,
     CASE 
-        WHEN DATEDIFF(t.tanggal_kembali, t.tanggal_sewa) <= 3 THEN 'Pendek'
-        WHEN DATEDIFF(t.tanggal_kembali, t.tanggal_sewa) <= 7 THEN 'Sedang'
+        WHEN DATEDIFF(t.tanggal_kembali, t.tanggal_pinjam) <= 3 THEN 'Pendek'
+        WHEN DATEDIFF(t.tanggal_kembali, t.tanggal_pinjam) <= 7 THEN 'Sedang'
         ELSE 'Panjang'
     END as kategori_durasi
 FROM transaksi t
 JOIN pelanggan p ON t.id_pelanggan = p.id_pelanggan
 JOIN detail_transaksi dt ON t.id_transaksi = dt.id_transaksi
 WHERE t.tanggal_kembali IS NOT NULL
-GROUP BY t.id_transaksi, p.nama_pelanggan, t.tanggal_sewa, t.tanggal_kembali
+GROUP BY t.id_transaksi, p.nama_pelanggan, t.tanggal_pinjam, t.tanggal_kembali, t.denda
 ORDER BY durasi_hari DESC";
 
 $stmt = $db->prepare($query);
@@ -31,9 +32,9 @@ $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Query untuk statistik durasi
 $stats_query = "SELECT 
-    AVG(DATEDIFF(t.tanggal_kembali, t.tanggal_sewa)) as rata_rata_durasi,
-    MAX(DATEDIFF(t.tanggal_kembali, t.tanggal_sewa)) as durasi_terpanjang,
-    MIN(DATEDIFF(t.tanggal_kembali, t.tanggal_sewa)) as durasi_terpendek,
+    AVG(DATEDIFF(t.tanggal_kembali, t.tanggal_pinjam)) as rata_rata_durasi,
+    MAX(DATEDIFF(t.tanggal_kembali, t.tanggal_pinjam)) as durasi_terpanjang,
+    MIN(DATEDIFF(t.tanggal_kembali, t.tanggal_pinjam)) as durasi_terpendek,
     COUNT(*) as total_transaksi_selesai
 FROM transaksi t
 WHERE t.tanggal_kembali IS NOT NULL";
@@ -170,7 +171,7 @@ $stats = $stats_stmt->fetch(PDO::FETCH_ASSOC);
                                         <tr>
                                             <td><?= htmlspecialchars($row['id_transaksi']) ?></td>
                                             <td><?= htmlspecialchars($row['nama_pelanggan']) ?></td>
-                                            <td><?= date('d/m/Y', strtotime($row['tanggal_sewa'])) ?></td>
+                                            <td><?= date('d/m/Y', strtotime($row['tanggal_pinjam'])) ?></td>
                                             <td><?= date('d/m/Y', strtotime($row['tanggal_kembali'])) ?></td>
                                             <td>
                                                 <span class="badge bg-primary fs-6">

@@ -1,6 +1,10 @@
 <?php
 require_once 'auth_check.php';
 require_once 'config/database.php';
+
+// Initialize database connection
+$database = new Database();
+$db = $database->getConnection();
 ?>
 
 <!DOCTYPE html>

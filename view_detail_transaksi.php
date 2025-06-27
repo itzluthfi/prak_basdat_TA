@@ -5,7 +5,7 @@ $database = new Database();
 $db = $database->getConnection();
 
 // Query untuk view detail transaksi lengkap
-$query = "SELECT * FROM v_detail_transaksi_lengkap ORDER BY id_transaksi DESC";
+$query = "SELECT * FROM v_detail_transaksi_lengkap ORDER BY ID DESC";
 
 $stmt = $db->prepare($query);
 $stmt->execute();
@@ -52,8 +52,8 @@ $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     <div class="card-body">
                         <p class="card-text">
                             <strong>Database View:</strong> <code>v_detail_transaksi_lengkap</code><br>
-                            View ini menggabungkan 5 tabel: TRANSAKSI, PELANGGAN, KARYAWAN, DETAIL_TRANSAKSI, dan BARANG.
-                            Menampilkan informasi lengkap setiap transaksi dengan detail pelanggan, karyawan, dan barang.
+                            View ini menggabungkan 6 tabel: TRANSAKSI, PELANGGAN, KARYAWAN, DETAIL_TRANSAKSI, BARANG, dan KATEGORI_BARANG.
+                            Menampilkan satu baris per transaksi dengan data multi-barang yang digabung menggunakan GROUP_CONCAT.
                         </p>
                     </div>
                 </div>
@@ -64,9 +64,17 @@ $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
         <div class="row mb-4">
             <?php
             $total_records = count($results);
-            $total_subtotal = array_sum(array_column($results, 'subtotal'));
-            $unique_customers = count(array_unique(array_column($results, 'nama_pelanggan')));
-            $unique_items = count(array_unique(array_column($results, 'nama_barang')));
+            $unique_customers = count(array_unique(array_column($results, 'Nama_Pelanggan')));
+            $unique_transactions = $total_records; // Karena sudah satu baris per transaksi
+
+            // Hitung total barang dari kolom Nama_Barang yang di-GROUP_CONCAT
+            $total_items = 0;
+            foreach ($results as $row) {
+                if (!empty($row['Nama_Barang'])) {
+                    $items = explode(', ', $row['Nama_Barang']);
+                    $total_items += count($items);
+                }
+            }
             ?>
 
             <div class="col-md-3 mb-3">
@@ -74,7 +82,7 @@ $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     <div class="card-body">
                         <i class="fas fa-receipt fa-2x mb-2"></i>
                         <h4><?= number_format($total_records) ?></h4>
-                        <p class="mb-0">Total Records</p>
+                        <p class="mb-0">Total Transaksi</p>
                     </div>
                 </div>
             </div>
@@ -82,9 +90,9 @@ $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <div class="col-md-3 mb-3">
                 <div class="card text-center bg-success text-white">
                     <div class="card-body">
-                        <i class="fas fa-money-bill-wave fa-2x mb-2"></i>
-                        <h4>Rp <?= number_format($total_subtotal) ?></h4>
-                        <p class="mb-0">Total Subtotal</p>
+                        <i class="fas fa-box fa-2x mb-2"></i>
+                        <h4><?= number_format($total_items) ?></h4>
+                        <p class="mb-0">Total Item Disewa</p>
                     </div>
                 </div>
             </div>
@@ -102,9 +110,9 @@ $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <div class="col-md-3 mb-3">
                 <div class="card text-center bg-info text-white">
                     <div class="card-body">
-                        <i class="fas fa-box fa-2x mb-2"></i>
-                        <h4><?= number_format($unique_items) ?></h4>
-                        <p class="mb-0">Unique Items</p>
+                        <i class="fas fa-calendar-alt fa-2x mb-2"></i>
+                        <h4><?= number_format($unique_transactions) ?></h4>
+                        <p class="mb-0">Unique Transactions</p>
                     </div>
                 </div>
             </div>
@@ -117,7 +125,7 @@ $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 <select class="form-select" id="filterPelanggan">
                     <option value="">Semua Pelanggan</option>
                     <?php
-                    $customers = array_unique(array_column($results, 'nama_pelanggan'));
+                    $customers = array_unique(array_column($results, 'Nama_Pelanggan'));
                     sort($customers);
                     foreach ($customers as $customer): ?>
                         <option value="<?= htmlspecialchars($customer) ?>"><?= htmlspecialchars($customer) ?></option>
@@ -129,7 +137,7 @@ $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 <select class="form-select" id="filterKaryawan">
                     <option value="">Semua Karyawan</option>
                     <?php
-                    $employees = array_unique(array_column($results, 'nama_karyawan'));
+                    $employees = array_unique(array_column($results, 'Nama_Karyawan'));
                     sort($employees);
                     foreach ($employees as $employee): ?>
                         <option value="<?= htmlspecialchars($employee) ?>"><?= htmlspecialchars($employee) ?></option>
@@ -163,16 +171,17 @@ $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                         <th>ID</th>
                                         <th>Pelanggan</th>
                                         <th>Kontak</th>
+                                        <th>Alamat</th>
+                                        <th>Barang</th>
+                                        <th>Kategori</th>
+                                        <th>Harga Sewa</th>
+                                        <th>Kondisi</th>
+                                        <th>Tanggal Pinjam</th>
+                                        <th>Tanggal Kembali</th>
                                         <th>Karyawan</th>
                                         <th>Shift</th>
-                                        <th>Barang</th>
-                                        <th>Qty</th>
-                                        <th>Harga</th>
-                                        <th>Subtotal</th>
-                                        <th>Kondisi</th>
-                                        <th>Tanggal</th>
-                                        <th>Metode</th>
-                                        <th>Status</th>
+                                        <th>Metode Bayar</th>
+                                        <th>Status Bayar</th>
                                         <th>Denda</th>
                                         <th>Rating</th>
                                     </tr>
@@ -180,64 +189,68 @@ $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                 <tbody>
                                     <?php foreach ($results as $row): ?>
                                         <tr>
-                                            <td><strong><?= $row['id_transaksi'] ?></strong></td>
-                                            <td><?= htmlspecialchars($row['nama_pelanggan']) ?></td>
+                                            <td><strong><?= $row['ID'] ?></strong></td>
+                                            <td><?= htmlspecialchars($row['Nama_Pelanggan']) ?></td>
                                             <td>
                                                 <small>
-                                                    <?= htmlspecialchars($row['no_hp']) ?><br>
-                                                    <?= htmlspecialchars($row['email']) ?>
-                                                </small>
-                                            </td>
-                                            <td><?= htmlspecialchars($row['nama_karyawan']) ?></td>
-                                            <td>
-                                                <span class="badge bg-<?= $row['shift_karyawan'] == 'Pagi' ? 'warning' : 'info' ?>">
-                                                    <?= $row['shift_karyawan'] ?>
-                                                </span>
-                                            </td>
-                                            <td><strong><?= htmlspecialchars($row['nama_barang']) ?></strong></td>
-                                            <td><?= $row['jumlah'] ?></td>
-                                            <td>Rp <?= number_format($row['harga_satuan']) ?></td>
-                                            <td><strong>Rp <?= number_format($row['subtotal']) ?></strong></td>
-                                            <td>
-                                                <small>
-                                                    <span class="badge bg-<?= $row['kondisi_awal'] == 'Baik' ? 'success' : 'danger' ?>">
-                                                        <?= $row['kondisi_awal'] ?>
-                                                    </span>
-                                                    →
-                                                    <span class="badge bg-<?= $row['kondisi_kembali'] == 'Baik' ? 'success' : 'danger' ?>">
-                                                        <?= $row['kondisi_kembali'] ?: 'N/A' ?>
-                                                    </span>
+                                                    <?= htmlspecialchars($row['No_HP']) ?><br>
+                                                    <?= htmlspecialchars($row['Email']) ?>
                                                 </small>
                                             </td>
                                             <td>
-                                                <small>
-                                                    <?= date('d/m/Y', strtotime($row['tanggal_pinjam'])) ?><br>
-                                                    <?= date('d/m/Y', strtotime($row['tanggal_kembali'])) ?>
-                                                </small>
+                                                <small><?= htmlspecialchars($row['Alamat_Lengkap']) ?></small>
                                             </td>
                                             <td>
-                                                <span class="badge bg-<?= $row['metode_bayar'] == 'Transfer' ? 'primary' : 'success' ?>">
-                                                    <?= $row['metode_bayar'] ?>
+                                                <small><strong><?= htmlspecialchars($row['Nama_Barang']) ?></strong></small>
+                                            </td>
+                                            <td>
+                                                <small><?= htmlspecialchars($row['Kategori_Barang']) ?></small>
+                                            </td>
+                                            <td>
+                                                <small><?= htmlspecialchars($row['Harga_Sewa']) ?></small>
+                                            </td>
+                                            <td>
+                                                <small><?= htmlspecialchars($row['Kondisi_Barang']) ?></small>
+                                            </td>
+                                            <td>
+                                                <small><?= $row['Tanggal_Pinjam'] ? date('d/m/Y', strtotime($row['Tanggal_Pinjam'])) : '-' ?></small>
+                                            </td>
+                                            <td>
+                                                <small><?= $row['Tanggal_Kembali'] ? date('d/m/Y', strtotime($row['Tanggal_Kembali'])) : '-' ?></small>
+                                            </td>
+                                            <td><?= htmlspecialchars($row['Nama_Karyawan']) ?></td>
+                                            <td>
+                                                <span class="badge bg-<?= $row['Shift_Karyawan'] == 'Pagi' ? 'warning' : 'info' ?>">
+                                                    <?= $row['Shift_Karyawan'] ?>
                                                 </span>
                                             </td>
                                             <td>
-                                                <span class="badge bg-<?= $row['status_bayar'] == 'Lunas' ? 'success' : 'danger' ?>">
-                                                    <?= $row['status_bayar'] ?>
+                                                <span class="badge bg-<?= $row['Metode_Bayar'] == 'Transfer' ? 'primary' : 'success' ?>">
+                                                    <?= $row['Metode_Bayar'] ?>
                                                 </span>
                                             </td>
                                             <td>
-                                                <?php if ($row['denda'] > 0): ?>
-                                                    <span class="text-danger">Rp <?= number_format($row['denda']) ?></span>
+                                                <span class="badge bg-<?= $row['Status_Bayar'] == 'Lunas' ? 'success' : 'danger' ?>">
+                                                    <?= $row['Status_Bayar'] ?>
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <?php if ($row['Denda'] && $row['Denda'] > 0): ?>
+                                                    <span class="text-danger">Rp <?= number_format($row['Denda']) ?></span>
+                                                    <?php if ($row['Keterangan_Denda']): ?>
+                                                        <br><small class="text-muted"><?= htmlspecialchars($row['Keterangan_Denda']) ?></small>
+                                                    <?php endif; ?>
                                                 <?php else: ?>
                                                     <span class="text-success">-</span>
                                                 <?php endif; ?>
                                             </td>
                                             <td>
-                                                <?php if ($row['rating']): ?>
+                                                <?php if ($row['Rating']): ?>
                                                     <div class="text-warning">
                                                         <?php for ($i = 1; $i <= 5; $i++): ?>
-                                                            <i class="fas fa-star<?= $i <= $row['rating'] ? '' : '-o' ?>"></i>
+                                                            <i class="fas fa-star<?= $i <= $row['Rating'] ? '' : '-o' ?>"></i>
                                                         <?php endfor; ?>
+                                                        <br><small>(<?= $row['Rating'] ?>/5)</small>
                                                     </div>
                                                 <?php else: ?>
                                                     <span class="text-muted">-</span>
@@ -265,32 +278,45 @@ $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     <div class="card-body">
                         <pre class="bg-light p-3"><code>CREATE VIEW v_detail_transaksi_lengkap AS
 SELECT
-    t.id_transaksi,
-    p.nama_pelanggan,
-    p.no_hp,
-    p.email,
-    k.nama_karyawan,
-    k.shift_karyawan,
-    b.nama_barang,
-    dt.jumlah,
-    dt.harga_satuan,
-    dt.kondisi_awal,
-    dt.kondisi_kembali,
-    t.tanggal_pinjam,
-    t.tanggal_kembali,
-    t.metode_bayar,
-    t.status_bayar,
-    t.denda,
-    t.ulasan_pelanggan,
-    t.rating,
-    (dt.jumlah * dt.harga_satuan) AS subtotal
+    t.id_transaksi AS ID,
+    p.nama_pelanggan AS Nama_Pelanggan,
+    p.no_hp AS No_HP,
+    p.email AS Email,
+    p.alamat_lengkap AS Alamat_Lengkap,
+    GROUP_CONCAT(DISTINCT b.nama_barang ORDER BY b.nama_barang SEPARATOR ', ') AS Nama_Barang,
+    GROUP_CONCAT(DISTINCT kb.nama_kategori ORDER BY kb.nama_kategori SEPARATOR ', ') AS Kategori_Barang,
+    GROUP_CONCAT(DISTINCT dt.harga_satuan ORDER BY b.nama_barang SEPARATOR ', ') AS Harga_Sewa,
+    GROUP_CONCAT(DISTINCT 
+        CASE 
+            WHEN dt.kondisi_kembali IS NOT NULL THEN dt.kondisi_kembali 
+            ELSE dt.kondisi_awal 
+        END 
+        ORDER BY b.nama_barang SEPARATOR ', '
+    ) AS Kondisi_Barang,
+    t.tanggal_pinjam AS Tanggal_Pinjam,
+    t.tanggal_kembali AS Tanggal_Kembali,
+    k.nama_karyawan AS Nama_Karyawan,
+    k.shift_karyawan AS Shift_Karyawan,
+    t.metode_bayar AS Metode_Bayar,
+    t.status_bayar AS Status_Bayar,
+    t.tanggal_bayar AS Tanggal_Bayar,
+    CASE WHEN t.denda > 0 THEN t.denda ELSE NULL END AS Denda,
+    CASE WHEN t.denda > 0 THEN t.keterangan_denda ELSE NULL END AS Keterangan_Denda,
+    t.ulasan_pelanggan AS Ulasan_Pelanggan,
+    t.rating AS Rating
 FROM
     transaksi t
     JOIN pelanggan p ON t.id_pelanggan = p.id_pelanggan
     JOIN karyawan k ON t.id_karyawan = k.id_karyawan
     JOIN detail_transaksi dt ON t.id_transaksi = dt.id_transaksi
     JOIN barang b ON dt.id_barang = b.id_barang
-ORDER BY t.id_transaksi, b.nama_barang;</code></pre>
+    JOIN kategori_barang kb ON b.id_kategori = kb.id_kategori
+GROUP BY 
+    t.id_transaksi, p.nama_pelanggan, p.no_hp, p.email, p.alamat_lengkap,
+    k.nama_karyawan, k.shift_karyawan, t.tanggal_pinjam, t.tanggal_kembali,
+    t.metode_bayar, t.status_bayar, t.tanggal_bayar, t.denda, t.keterangan_denda,
+    t.ulasan_pelanggan, t.rating
+ORDER BY t.id_transaksi;</code></pre>
                     </div>
                 </div>
             </div>
@@ -327,15 +353,15 @@ ORDER BY t.id_transaksi, b.nama_barang;</code></pre>
 
             // Custom filters
             $('#filterPelanggan').on('change', function() {
-                table.column(1).search(this.value).draw();
+                table.column(1).search(this.value).draw(); // Kolom Nama_Pelanggan
             });
 
             $('#filterKaryawan').on('change', function() {
-                table.column(3).search(this.value).draw();
+                table.column(10).search(this.value).draw(); // Kolom Nama_Karyawan
             });
 
             $('#filterStatus').on('change', function() {
-                table.column(12).search(this.value).draw();
+                table.column(13).search(this.value).draw(); // Kolom Status_Bayar
             });
         });
     </script>

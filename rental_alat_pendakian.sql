@@ -684,37 +684,74 @@ ORDER BY total_pembayaran DESC;
 -- CREATE VIEWS - JOIN LEBIH DARI 2 TABEL
 -- =====================================================
 
--- VIEW 1: Detail Transaksi Lengkap (5 tabel)
--- Menggabungkan: TRANSAKSI, PELANGGAN, KARYAWAN, DETAIL_TRANSAKSI, BARANG
+-- VIEW 1: Detail Transaksi Lengkap (6 tabel)
+-- Menggabungkan: TRANSAKSI, PELANGGAN, KARYAWAN, DETAIL_TRANSAKSI, BARANG, KATEGORI_BARANG
+-- View ini menampilkan satu baris per transaksi dengan data multi-barang yang digabung
 CREATE VIEW v_detail_transaksi_lengkap AS
 SELECT
-    t.id_transaksi,
-    p.nama_pelanggan,
-    p.no_hp,
-    p.email,
-    k.nama_karyawan,
-    k.posisi,
-    k.shift_karyawan,
-    b.nama_barang,
-    dt.jumlah,
-    dt.harga_satuan,
-    dt.kondisi_awal,
-    dt.kondisi_kembali,
-    t.tanggal_pinjam,
-    t.tanggal_kembali,
-    t.metode_bayar,
-    t.status_bayar,
-    t.denda,
-    t.ulasan_pelanggan,
-    t.rating,
-    (dt.jumlah * dt.harga_satuan) AS subtotal
+    t.id_transaksi AS ID,
+    p.nama_pelanggan AS Nama_Pelanggan,
+    p.no_hp AS No_HP,
+    p.email AS Email,
+    p.alamat_lengkap AS Alamat_Lengkap,
+    GROUP_CONCAT(
+        b.nama_barang
+        ORDER BY b.nama_barang SEPARATOR ', '
+    ) AS Nama_Barang,
+    GROUP_CONCAT(
+        kb.nama_kategori
+        ORDER BY b.nama_barang SEPARATOR ', '
+    ) AS Kategori_Barang,
+    GROUP_CONCAT(
+        dt.harga_satuan
+        ORDER BY b.nama_barang SEPARATOR ', '
+    ) AS Harga_Sewa,
+    GROUP_CONCAT(
+        CASE
+            WHEN dt.kondisi_kembali IS NOT NULL THEN dt.kondisi_kembali
+            ELSE dt.kondisi_awal
+        END
+        ORDER BY b.nama_barang SEPARATOR ', '
+    ) AS Kondisi_Barang,
+    t.tanggal_pinjam AS Tanggal_Pinjam,
+    t.tanggal_kembali AS Tanggal_Kembali,
+    k.nama_karyawan AS Nama_Karyawan,
+    k.shift_karyawan AS Shift_Karyawan,
+    t.metode_bayar AS Metode_Bayar,
+    t.status_bayar AS Status_Bayar,
+    t.tanggal_bayar AS Tanggal_Bayar,
+    CASE
+        WHEN t.denda > 0 THEN t.denda
+        ELSE NULL
+    END AS Denda,
+    t.keterangan_denda AS Keterangan_Denda,
+    t.ulasan_pelanggan AS Ulasan_Pelanggan,
+    t.rating AS Rating
 FROM
     transaksi t
     JOIN pelanggan p ON t.id_pelanggan = p.id_pelanggan
     JOIN karyawan k ON t.id_karyawan = k.id_karyawan
     JOIN detail_transaksi dt ON t.id_transaksi = dt.id_transaksi
     JOIN barang b ON dt.id_barang = b.id_barang
-ORDER BY t.id_transaksi, b.nama_barang;
+    JOIN kategori_barang kb ON b.id_kategori = kb.id_kategori
+GROUP BY
+    t.id_transaksi,
+    p.nama_pelanggan,
+    p.no_hp,
+    p.email,
+    p.alamat_lengkap,
+    t.tanggal_pinjam,
+    t.tanggal_kembali,
+    k.nama_karyawan,
+    k.shift_karyawan,
+    t.metode_bayar,
+    t.status_bayar,
+    t.tanggal_bayar,
+    t.denda,
+    t.keterangan_denda,
+    t.ulasan_pelanggan,
+    t.rating
+ORDER BY t.id_transaksi;
 
 -- VIEW 2: Summary Transaksi per Kategori (4 tabel)
 -- Menggabungkan: TRANSAKSI, DETAIL_TRANSAKSI, BARANG, KATEGORI_BARANG

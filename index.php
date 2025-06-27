@@ -120,10 +120,13 @@ $db = $database->getConnection();
                                 <hr class="dropdown-divider">
                             </li>
                             <li><a class="dropdown-item" href="laporan_transaksi.php">
-                                    <i class="fas fa-file-invoice"></i> Laporan Transaksi
+                                    <i class="fas fa-file-invoice"></i> Riwayat Transaksi
+                                </a></li>
+                            <li><a class="dropdown-item" href="laporan_total_per_orang.php">
+                                    <i class="fas fa-calculator"></i> Total Transaksi per Orang
                                 </a></li>
                             <li><a class="dropdown-item" href="laporan_barang_rusak.php">
-                                    <i class="fas fa-exclamation-triangle"></i> Laporan Barang Rusak
+                                    <i class="fas fa-exclamation-triangle"></i> Barang Bermasalah
                                 </a></li>
                         </ul>
                     </li>
@@ -327,11 +330,66 @@ $db = $database->getConnection();
                 <div class="col-md-4 mb-4">
                     <div class="card h-100">
                         <div class="card-body text-center">
+                            <i class="fas fa-calculator feature-icon"></i>
+                            <h5 class="card-title">Total per Orang</h5>
+                            <p class="card-text">Total pembayaran (sewa + denda) per pelanggan</p>
+                            <a href="laporan_total_per_orang.php" class="btn btn-success">
+                                <i class="fas fa-eye"></i> Lihat Laporan
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100">
+                        <div class="card-body text-center">
+                            <i class="fas fa-history feature-icon"></i>
+                            <h5 class="card-title">Riwayat Transaksi</h5>
+                            <p class="card-text">Riwayat lengkap transaksi semua pelanggan</p>
+                            <a href="laporan_transaksi.php" class="btn btn-success">
+                                <i class="fas fa-eye"></i> Lihat Laporan
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Row 3: Additional Features -->
+            <div class="row">
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100">
+                        <div class="card-body text-center">
+                            <i class="fas fa-chart-bar feature-icon"></i>
+                            <h5 class="card-title">Durasi Sewa</h5>
+                            <p class="card-text">Rata-rata durasi sewa per kategori barang</p>
+                            <a href="laporan_durasi.php" class="btn btn-success">
+                                <i class="fas fa-eye"></i> Lihat Laporan
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100">
+                        <div class="card-body text-center">
                             <i class="fas fa-database feature-icon"></i>
                             <h5 class="card-title">Database Views</h5>
                             <p class="card-text">Akses views untuk analisis mendalam</p>
                             <a href="view_detail_transaksi.php" class="btn btn-success">
                                 <i class="fas fa-eye"></i> Lihat Views
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100">
+                        <div class="card-body text-center">
+                            <i class="fas fa-cogs feature-icon"></i>
+                            <h5 class="card-title">Data Master</h5>
+                            <p class="card-text">Kelola data barang, pelanggan, karyawan</p>
+                            <a href="data_barang.php" class="btn btn-success">
+                                <i class="fas fa-eye"></i> Kelola Data
                             </a>
                         </div>
                     </div>

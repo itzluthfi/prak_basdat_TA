@@ -4,39 +4,38 @@ require_once 'config/database.php';
 $database = new Database();
 $db = $database->getConnection();
 
-// Query untuk laporan durasi penyewaan
+// Query untuk durasi sewa rata-rata per kategori barang
 $query = "SELECT 
-    t.id_transaksi,
-    p.nama_pelanggan,
-    t.tanggal_pinjam,
-    t.tanggal_kembali,
-    DATEDIFF(t.tanggal_kembali, t.tanggal_pinjam) as durasi_hari,
-    COUNT(dt.id_detail) as jumlah_barang,
-    SUM(dt.jumlah * dt.harga_satuan) as total_biaya,
-    t.denda,
-    CASE 
-        WHEN DATEDIFF(t.tanggal_kembali, t.tanggal_pinjam) <= 3 THEN 'Pendek'
-        WHEN DATEDIFF(t.tanggal_kembali, t.tanggal_pinjam) <= 7 THEN 'Sedang'
-        ELSE 'Panjang'
-    END as kategori_durasi
-FROM transaksi t
-JOIN pelanggan p ON t.id_pelanggan = p.id_pelanggan
-JOIN detail_transaksi dt ON t.id_transaksi = dt.id_transaksi
+    kb.nama_kategori,
+    COUNT(DISTINCT t.id_transaksi) as jumlah_transaksi,
+    AVG(DATEDIFF(t.tanggal_kembali, t.tanggal_pinjam)) as rata_rata_durasi_hari,
+    MIN(DATEDIFF(t.tanggal_kembali, t.tanggal_pinjam)) as durasi_minimum,
+    MAX(DATEDIFF(t.tanggal_kembali, t.tanggal_pinjam)) as durasi_maksimum,
+    SUM(dt.jumlah * dt.harga_satuan) as total_pendapatan,
+    COUNT(dt.id_detail) as total_item_disewa
+FROM kategori_barang kb
+JOIN barang b ON kb.id_kategori = b.id_kategori
+JOIN detail_transaksi dt ON b.id_barang = dt.id_barang
+JOIN transaksi t ON dt.id_transaksi = t.id_transaksi
 WHERE t.tanggal_kembali IS NOT NULL
-GROUP BY t.id_transaksi, p.nama_pelanggan, t.tanggal_pinjam, t.tanggal_kembali, t.denda
-ORDER BY durasi_hari DESC";
+GROUP BY kb.id_kategori, kb.nama_kategori
+ORDER BY rata_rata_durasi_hari DESC";
 
 $stmt = $db->prepare($query);
 $stmt->execute();
 $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Query untuk statistik durasi
+// Query untuk statistik umum durasi
 $stats_query = "SELECT 
-    AVG(DATEDIFF(t.tanggal_kembali, t.tanggal_pinjam)) as rata_rata_durasi,
+    AVG(DATEDIFF(t.tanggal_kembali, t.tanggal_pinjam)) as rata_rata_durasi_keseluruhan,
     MAX(DATEDIFF(t.tanggal_kembali, t.tanggal_pinjam)) as durasi_terpanjang,
     MIN(DATEDIFF(t.tanggal_kembali, t.tanggal_pinjam)) as durasi_terpendek,
-    COUNT(*) as total_transaksi_selesai
+    COUNT(DISTINCT t.id_transaksi) as total_transaksi_selesai,
+    COUNT(DISTINCT kb.id_kategori) as total_kategori
 FROM transaksi t
+JOIN detail_transaksi dt ON t.id_transaksi = dt.id_transaksi
+JOIN barang b ON dt.id_barang = b.id_barang
+JOIN kategori_barang kb ON b.id_kategori = kb.id_kategori
 WHERE t.tanggal_kembali IS NOT NULL";
 
 $stats_stmt = $db->prepare($stats_query);
@@ -50,7 +49,7 @@ $stats = $stats_stmt->fetch(PDO::FETCH_ASSOC);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Laporan Durasi Penyewaan - Rental Alat Pendakian</title>
+    <title>Durasi Sewa Rata-rata per Kategori - Rental Alat Pendakian</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" rel="stylesheet">
@@ -79,12 +78,12 @@ $stats = $stats_stmt->fetch(PDO::FETCH_ASSOC);
                 <div class="card">
                     <div class="card-header bg-info text-white">
                         <h4 class="mb-0">
-                            <i class="fas fa-clock"></i> Laporan Durasi Penyewaan
+                            <i class="fas fa-calendar-alt"></i> Durasi Sewa Rata-rata per Kategori
                         </h4>
                     </div>
                     <div class="card-body">
                         <p class="card-text">
-                            Laporan ini menampilkan analisis durasi penyewaan, mulai dari yang terpendek hingga terpanjang.
+                            Laporan ini menampilkan rata-rata lama penyewaan untuk setiap kategori barang yang tersedia.
                         </p>
                     </div>
                 </div>
@@ -97,7 +96,7 @@ $stats = $stats_stmt->fetch(PDO::FETCH_ASSOC);
                 <div class="card text-center bg-primary text-white">
                     <div class="card-body">
                         <i class="fas fa-calendar-alt fa-2x mb-2"></i>
-                        <h4><?= number_format($stats['rata_rata_durasi'], 1) ?></h4>
+                        <h4><?= number_format($stats['rata_rata_durasi_keseluruhan'], 1) ?></h4>
                         <p class="mb-0">Rata-rata Hari</p>
                     </div>
                 </div>
@@ -140,7 +139,7 @@ $stats = $stats_stmt->fetch(PDO::FETCH_ASSOC);
                 <div class="card">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <h5 class="mb-0">
-                            <i class="fas fa-table"></i> Data Durasi Penyewaan
+                            <i class="fas fa-table"></i> Data Durasi Sewa per Kategori
                         </h5>
                         <div>
                             <button id="exportPDF" class="btn btn-danger btn-sm me-2">
@@ -156,52 +155,45 @@ $stats = $stats_stmt->fetch(PDO::FETCH_ASSOC);
                             <table id="dataTable" class="table table-striped table-hover">
                                 <thead class="table-dark">
                                     <tr>
-                                        <th>ID Transaksi</th>
-                                        <th>Pelanggan</th>
-                                        <th>Tanggal Sewa</th>
-                                        <th>Tanggal Kembali</th>
-                                        <th>Durasi (Hari)</th>
-                                        <th>Jumlah Barang</th>
-                                        <th>Total Biaya</th>
-                                        <th>Kategori</th>
+                                        <th>No</th>
+                                        <th>Kategori Barang</th>
+                                        <th>Jumlah Transaksi</th>
+                                        <th>Rata-rata Durasi (Hari)</th>
+                                        <th>Durasi Min</th>
+                                        <th>Durasi Max</th>
+                                        <th>Total Pendapatan</th>
+                                        <th>Total Item Disewa</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <?php foreach ($results as $row): ?>
+                                    <?php $no = 1;
+                                    foreach ($results as $row): ?>
                                         <tr>
-                                            <td><?= htmlspecialchars($row['id_transaksi']) ?></td>
-                                            <td><?= htmlspecialchars($row['nama_pelanggan']) ?></td>
-                                            <td><?= date('d/m/Y', strtotime($row['tanggal_pinjam'])) ?></td>
-                                            <td><?= date('d/m/Y', strtotime($row['tanggal_kembali'])) ?></td>
+                                            <td><?= $no++ ?></td>
+                                            <td>
+                                                <strong class="text-primary"><?= htmlspecialchars($row['nama_kategori']) ?></strong>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-info"><?= $row['jumlah_transaksi'] ?> Transaksi</span>
+                                            </td>
                                             <td>
                                                 <span class="badge bg-primary fs-6">
-                                                    <?= $row['durasi_hari'] ?> hari
+                                                    <?= number_format($row['rata_rata_durasi_hari'], 1) ?> hari
                                                 </span>
                                             </td>
-                                            <td><?= $row['jumlah_barang'] ?></td>
+                                            <td>
+                                                <span class="badge bg-success"><?= $row['durasi_minimum'] ?> hari</span>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-warning"><?= $row['durasi_maksimum'] ?> hari</span>
+                                            </td>
                                             <td>
                                                 <strong class="text-success">
-                                                    Rp <?= number_format($row['total_biaya']) ?>
+                                                    Rp <?= number_format($row['total_pendapatan']) ?>
                                                 </strong>
                                             </td>
                                             <td>
-                                                <?php
-                                                $badge_class = '';
-                                                switch ($row['kategori_durasi']) {
-                                                    case 'Pendek':
-                                                        $badge_class = 'bg-success';
-                                                        break;
-                                                    case 'Sedang':
-                                                        $badge_class = 'bg-warning';
-                                                        break;
-                                                    case 'Panjang':
-                                                        $badge_class = 'bg-danger';
-                                                        break;
-                                                }
-                                                ?>
-                                                <span class="badge <?= $badge_class ?>">
-                                                    <?= $row['kategori_durasi'] ?>
-                                                </span>
+                                                <span class="badge bg-secondary"><?= $row['total_item_disewa'] ?> Items</span>
                                             </td>
                                         </tr>
                                     <?php endforeach; ?>

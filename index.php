@@ -404,10 +404,11 @@ $db = $database->getConnection();
             <div class="row">
                 <div class="col-md-12">
                     <h5>Sistem Informasi Rental Alat Pendakian</h5>
+                    <p class="mb-0" style="font-style: italic;">Luthfi Shidqi Habibulloh - 06.2023.1.07702</p>
                     <p class="mb-0">Praktikum Basis Data - Normalisasi & Advanced Queries</p>
-                    <p class="mb-0">
+                    <!-- <p class="mb-0">
                         <i class="fas fa-code"></i> Built with PHP, MySQL & Bootstrap
-                    </p>
+                    </p> -->
                 </div>
             </div>
         </div>

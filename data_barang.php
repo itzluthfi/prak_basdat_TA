@@ -14,21 +14,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
     if ($action == 'add') {
         $nama_barang = trim($_POST['nama_barang']);
-        $kategori = trim($_POST['kategori']);
-        $stok = (int)$_POST['stok'];
+        $id_kategori = (int)$_POST['id_kategori'];
+        $stok_tersedia = (int)$_POST['stok_tersedia'];
         $harga_sewa = (float)$_POST['harga_sewa'];
-        $deskripsi = trim($_POST['deskripsi']);
-        $kondisi = $_POST['kondisi'];
 
-        $query = "INSERT INTO barang (nama_barang, kategori, stok, harga_sewa_per_hari, deskripsi, kondisi) 
-                  VALUES (:nama_barang, :kategori, :stok, :harga_sewa, :deskripsi, :kondisi)";
+        $query = "INSERT INTO barang (nama_barang, id_kategori, stok_tersedia, harga_sewa) 
+                  VALUES (:nama_barang, :id_kategori, :stok_tersedia, :harga_sewa)";
         $stmt = $db->prepare($query);
         $stmt->bindParam(':nama_barang', $nama_barang);
-        $stmt->bindParam(':kategori', $kategori);
-        $stmt->bindParam(':stok', $stok);
+        $stmt->bindParam(':id_kategori', $id_kategori);
+        $stmt->bindParam(':stok_tersedia', $stok_tersedia);
         $stmt->bindParam(':harga_sewa', $harga_sewa);
-        $stmt->bindParam(':deskripsi', $deskripsi);
-        $stmt->bindParam(':kondisi', $kondisi);
 
         if ($stmt->execute()) {
             $message = 'Barang berhasil ditambahkan!';
@@ -40,23 +36,19 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     } elseif ($action == 'edit') {
         $id_barang = (int)$_POST['id_barang'];
         $nama_barang = trim($_POST['nama_barang']);
-        $kategori = trim($_POST['kategori']);
-        $stok = (int)$_POST['stok'];
+        $id_kategori = (int)$_POST['id_kategori'];
+        $stok_tersedia = (int)$_POST['stok_tersedia'];
         $harga_sewa = (float)$_POST['harga_sewa'];
-        $deskripsi = trim($_POST['deskripsi']);
-        $kondisi = $_POST['kondisi'];
 
-        $query = "UPDATE barang SET nama_barang = :nama_barang, kategori = :kategori, 
-                  stok = :stok, harga_sewa_per_hari = :harga_sewa, deskripsi = :deskripsi, 
-                  kondisi = :kondisi WHERE id_barang = :id_barang";
+        $query = "UPDATE barang SET nama_barang = :nama_barang, id_kategori = :id_kategori, 
+                  stok_tersedia = :stok_tersedia, harga_sewa = :harga_sewa 
+                  WHERE id_barang = :id_barang";
         $stmt = $db->prepare($query);
         $stmt->bindParam(':id_barang', $id_barang);
         $stmt->bindParam(':nama_barang', $nama_barang);
-        $stmt->bindParam(':kategori', $kategori);
-        $stmt->bindParam(':stok', $stok);
+        $stmt->bindParam(':id_kategori', $id_kategori);
+        $stmt->bindParam(':stok_tersedia', $stok_tersedia);
         $stmt->bindParam(':harga_sewa', $harga_sewa);
-        $stmt->bindParam(':deskripsi', $deskripsi);
-        $stmt->bindParam(':kondisi', $kondisi);
 
         if ($stmt->execute()) {
             $message = 'Barang berhasil diupdate!';
@@ -96,14 +88,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
 }
 
-// Get all items
-$query = "SELECT * FROM barang ORDER BY nama_barang";
+// Get all items with category names
+$query = "SELECT b.*, kb.nama_kategori 
+          FROM barang b 
+          JOIN kategori_barang kb ON b.id_kategori = kb.id_kategori 
+          ORDER BY b.nama_barang";
 $stmt = $db->prepare($query);
 $stmt->execute();
 $barang_list = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Get categories for dropdown
-$cat_query = "SELECT DISTINCT kategori FROM barang ORDER BY kategori";
+$cat_query = "SELECT * FROM kategori_barang ORDER BY nama_kategori";
 $cat_stmt = $db->prepare($cat_query);
 $cat_stmt->execute();
 $categories = $cat_stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -225,8 +220,6 @@ $categories = $cat_stmt->fetchAll(PDO::FETCH_ASSOC);
                                         <th>Kategori</th>
                                         <th>Stok</th>
                                         <th>Harga Sewa</th>
-                                        <th>Kondisi</th>
-                                        <th>Status</th>
                                         <th>Aksi</th>
                                     </tr>
                                 </thead>
@@ -236,57 +229,22 @@ $categories = $cat_stmt->fetchAll(PDO::FETCH_ASSOC);
                                             <td><?= $barang['id_barang'] ?></td>
                                             <td>
                                                 <strong><?= htmlspecialchars($barang['nama_barang']) ?></strong>
-                                                <br>
-                                                <small class="text-muted">
-                                                    <?= htmlspecialchars(substr($barang['deskripsi'] ?? '', 0, 50)) ?>
-                                                    <?= strlen($barang['deskripsi'] ?? '') > 50 ? '...' : '' ?>
-                                                </small>
                                             </td>
                                             <td>
                                                 <span class="badge bg-secondary">
-                                                    <?= htmlspecialchars($barang['kategori']) ?>
+                                                    <?= htmlspecialchars($barang['nama_kategori']) ?>
                                                 </span>
                                             </td>
                                             <td>
-                                                <span class="badge bg-<?= $barang['stok'] <= 5 ? 'danger' : ($barang['stok'] <= 10 ? 'warning' : 'success') ?> fs-6">
-                                                    <?= $barang['stok'] ?>
+                                                <span class="badge bg-<?= $barang['stok_tersedia'] <= 5 ? 'danger' : ($barang['stok_tersedia'] <= 10 ? 'warning' : 'success') ?> fs-6">
+                                                    <?= $barang['stok_tersedia'] ?>
                                                 </span>
                                             </td>
                                             <td>
                                                 <strong class="text-success">
-                                                    Rp <?= number_format($barang['harga_sewa_per_hari']) ?>
+                                                    Rp <?= number_format($barang['harga_sewa']) ?>
                                                 </strong>
                                                 <small class="text-muted d-block">/hari</small>
-                                            </td>
-                                            <td>
-                                                <?php
-                                                $kondisi_class = '';
-                                                switch ($barang['kondisi']) {
-                                                    case 'Baik':
-                                                        $kondisi_class = 'bg-success';
-                                                        break;
-                                                    case 'Cukup':
-                                                        $kondisi_class = 'bg-warning';
-                                                        break;
-                                                    case 'Rusak':
-                                                        $kondisi_class = 'bg-danger';
-                                                        break;
-                                                    default:
-                                                        $kondisi_class = 'bg-secondary';
-                                                }
-                                                ?>
-                                                <span class="badge <?= $kondisi_class ?>">
-                                                    <?= htmlspecialchars($barang['kondisi']) ?>
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <?php
-                                                $status = $barang['stok'] > 0 ? 'Tersedia' : 'Habis';
-                                                $status_class = $barang['stok'] > 0 ? 'bg-success' : 'bg-danger';
-                                                ?>
-                                                <span class="badge <?= $status_class ?>">
-                                                    <?= $status ?>
-                                                </span>
                                             </td>
                                             <td>
                                                 <div class="btn-group" role="group">
@@ -329,39 +287,25 @@ $categories = $cat_stmt->fetchAll(PDO::FETCH_ASSOC);
                                 <input type="text" class="form-control" id="add_nama_barang" name="nama_barang" required>
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label for="add_kategori" class="form-label">Kategori *</label>
-                                <input type="text" class="form-control" id="add_kategori" name="kategori" required list="kategori_list">
-                                <datalist id="kategori_list">
+                                <label for="add_id_kategori" class="form-label">Kategori *</label>
+                                <select class="form-select" id="add_id_kategori" name="id_kategori" required>
+                                    <option value="">Pilih Kategori</option>
                                     <?php foreach ($categories as $cat): ?>
-                                        <option value="<?= htmlspecialchars($cat['kategori']) ?>">
-                                        <?php endforeach; ?>
-                                </datalist>
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-4 mb-3">
-                                <label for="add_stok" class="form-label">Stok *</label>
-                                <input type="number" class="form-control" id="add_stok" name="stok" min="0" required>
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <label for="add_harga_sewa" class="form-label">Harga Sewa/Hari *</label>
-                                <input type="number" class="form-control" id="add_harga_sewa" name="harga_sewa" min="0" step="0.01" required>
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <label for="add_kondisi" class="form-label">Kondisi *</label>
-                                <select class="form-select" id="add_kondisi" name="kondisi" required>
-                                    <option value="">Pilih Kondisi</option>
-                                    <option value="Baik">Baik</option>
-                                    <option value="Cukup">Cukup</option>
-                                    <option value="Rusak">Rusak</option>
+                                        <option value="<?= $cat['id_kategori'] ?>"><?= htmlspecialchars($cat['nama_kategori']) ?></option>
+                                    <?php endforeach; ?>
                                 </select>
                             </div>
                         </div>
 
-                        <div class="mb-3">
-                            <label for="add_deskripsi" class="form-label">Deskripsi</label>
-                            <textarea class="form-control" id="add_deskripsi" name="deskripsi" rows="3" placeholder="Deskripsi detail barang..."></textarea>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="add_stok_tersedia" class="form-label">Stok Tersedia *</label>
+                                <input type="number" class="form-control" id="add_stok_tersedia" name="stok_tersedia" min="0" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="add_harga_sewa" class="form-label">Harga Sewa/Hari *</label>
+                                <input type="number" class="form-control" id="add_harga_sewa" name="harga_sewa" min="0" step="0.01" required>
+                            </div>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -396,34 +340,25 @@ $categories = $cat_stmt->fetchAll(PDO::FETCH_ASSOC);
                                 <input type="text" class="form-control" id="edit_nama_barang" name="nama_barang" required>
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label for="edit_kategori" class="form-label">Kategori *</label>
-                                <input type="text" class="form-control" id="edit_kategori" name="kategori" required list="kategori_list">
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-4 mb-3">
-                                <label for="edit_stok" class="form-label">Stok *</label>
-                                <input type="number" class="form-control" id="edit_stok" name="stok" min="0" required>
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <label for="edit_harga_sewa" class="form-label">Harga Sewa/Hari *</label>
-                                <input type="number" class="form-control" id="edit_harga_sewa" name="harga_sewa" min="0" step="0.01" required>
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <label for="edit_kondisi" class="form-label">Kondisi *</label>
-                                <select class="form-select" id="edit_kondisi" name="kondisi" required>
-                                    <option value="">Pilih Kondisi</option>
-                                    <option value="Baik">Baik</option>
-                                    <option value="Cukup">Cukup</option>
-                                    <option value="Rusak">Rusak</option>
+                                <label for="edit_id_kategori" class="form-label">Kategori *</label>
+                                <select class="form-select" id="edit_id_kategori" name="id_kategori" required>
+                                    <option value="">Pilih Kategori</option>
+                                    <?php foreach ($categories as $cat): ?>
+                                        <option value="<?= $cat['id_kategori'] ?>"><?= htmlspecialchars($cat['nama_kategori']) ?></option>
+                                    <?php endforeach; ?>
                                 </select>
                             </div>
                         </div>
 
-                        <div class="mb-3">
-                            <label for="edit_deskripsi" class="form-label">Deskripsi</label>
-                            <textarea class="form-control" id="edit_deskripsi" name="deskripsi" rows="3" placeholder="Deskripsi detail barang..."></textarea>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="edit_stok_tersedia" class="form-label">Stok Tersedia *</label>
+                                <input type="number" class="form-control" id="edit_stok_tersedia" name="stok_tersedia" min="0" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="edit_harga_sewa" class="form-label">Harga Sewa/Hari *</label>
+                                <input type="number" class="form-control" id="edit_harga_sewa" name="harga_sewa" min="0" step="0.01" required>
+                            </div>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -524,11 +459,9 @@ $categories = $cat_stmt->fetchAll(PDO::FETCH_ASSOC);
         function editItem(item) {
             document.getElementById('edit_id_barang').value = item.id_barang;
             document.getElementById('edit_nama_barang').value = item.nama_barang;
-            document.getElementById('edit_kategori').value = item.kategori;
-            document.getElementById('edit_stok').value = item.stok;
-            document.getElementById('edit_harga_sewa').value = item.harga_sewa_per_hari;
-            document.getElementById('edit_kondisi').value = item.kondisi;
-            document.getElementById('edit_deskripsi').value = item.deskripsi || '';
+            document.getElementById('edit_id_kategori').value = item.id_kategori;
+            document.getElementById('edit_stok_tersedia').value = item.stok_tersedia;
+            document.getElementById('edit_harga_sewa').value = item.harga_sewa;
 
             var editModal = new bootstrap.Modal(document.getElementById('editModal'));
             editModal.show();

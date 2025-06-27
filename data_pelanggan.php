@@ -14,16 +14,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
     if ($action == 'add') {
         $nama_pelanggan = trim($_POST['nama_pelanggan']);
-        $no_telepon = trim($_POST['no_telepon']);
-        $alamat = trim($_POST['alamat']);
+        $no_hp = trim($_POST['no_hp']);
+        $alamat_lengkap = trim($_POST['alamat_lengkap']);
         $email = trim($_POST['email']);
 
-        $query = "INSERT INTO pelanggan (nama_pelanggan, no_telepon, alamat, email) 
-                  VALUES (:nama_pelanggan, :no_telepon, :alamat, :email)";
+        $query = "INSERT INTO pelanggan (nama_pelanggan, no_hp, alamat_lengkap, email) 
+                  VALUES (:nama_pelanggan, :no_hp, :alamat_lengkap, :email)";
         $stmt = $db->prepare($query);
         $stmt->bindParam(':nama_pelanggan', $nama_pelanggan);
-        $stmt->bindParam(':no_telepon', $no_telepon);
-        $stmt->bindParam(':alamat', $alamat);
+        $stmt->bindParam(':no_hp', $no_hp);
+        $stmt->bindParam(':alamat_lengkap', $alamat_lengkap);
         $stmt->bindParam(':email', $email);
 
         if ($stmt->execute()) {
@@ -36,17 +36,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     } elseif ($action == 'edit') {
         $id_pelanggan = (int)$_POST['id_pelanggan'];
         $nama_pelanggan = trim($_POST['nama_pelanggan']);
-        $no_telepon = trim($_POST['no_telepon']);
-        $alamat = trim($_POST['alamat']);
+        $no_hp = trim($_POST['no_hp']);
+        $alamat_lengkap = trim($_POST['alamat_lengkap']);
         $email = trim($_POST['email']);
 
-        $query = "UPDATE pelanggan SET nama_pelanggan = :nama_pelanggan, no_telepon = :no_telepon, 
-                  alamat = :alamat, email = :email WHERE id_pelanggan = :id_pelanggan";
+        $query = "UPDATE pelanggan SET nama_pelanggan = :nama_pelanggan, no_hp = :no_hp, 
+                  alamat_lengkap = :alamat_lengkap, email = :email WHERE id_pelanggan = :id_pelanggan";
         $stmt = $db->prepare($query);
         $stmt->bindParam(':id_pelanggan', $id_pelanggan);
         $stmt->bindParam(':nama_pelanggan', $nama_pelanggan);
-        $stmt->bindParam(':no_telepon', $no_telepon);
-        $stmt->bindParam(':alamat', $alamat);
+        $stmt->bindParam(':no_hp', $no_hp);
+        $stmt->bindParam(':alamat_lengkap', $alamat_lengkap);
         $stmt->bindParam(':email', $email);
 
         if ($stmt->execute()) {
@@ -284,13 +284,13 @@ $pelanggan_list = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                             </td>
                                             <td>
                                                 <i class="fas fa-phone text-primary"></i>
-                                                <?= htmlspecialchars($pelanggan['no_telepon']) ?>
+                                                <?= htmlspecialchars($pelanggan['no_hp']) ?>
                                                 <br>
                                                 <i class="fas fa-envelope text-secondary"></i>
                                                 <small><?= htmlspecialchars($pelanggan['email']) ?></small>
                                             </td>
                                             <td>
-                                                <small><?= htmlspecialchars($pelanggan['alamat']) ?></small>
+                                                <small><?= htmlspecialchars($pelanggan['alamat_lengkap']) ?></small>
                                             </td>
                                             <td>
                                                 <span class="badge bg-primary fs-6">
@@ -364,19 +364,19 @@ $pelanggan_list = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                 <input type="text" class="form-control" id="add_nama_pelanggan" name="nama_pelanggan" required>
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label for="add_no_telepon" class="form-label">No. Telepon *</label>
-                                <input type="tel" class="form-control" id="add_no_telepon" name="no_telepon" required>
+                                <label for="add_no_hp" class="form-label">No. HP *</label>
+                                <input type="tel" class="form-control" id="add_no_hp" name="no_hp" required>
                             </div>
                         </div>
 
                         <div class="mb-3">
-                            <label for="add_email" class="form-label">Email</label>
-                            <input type="email" class="form-control" id="add_email" name="email" placeholder="contoh@email.com">
+                            <label for="add_email" class="form-label">Email *</label>
+                            <input type="email" class="form-control" id="add_email" name="email" placeholder="contoh@email.com" required>
                         </div>
 
                         <div class="mb-3">
-                            <label for="add_alamat" class="form-label">Alamat</label>
-                            <textarea class="form-control" id="add_alamat" name="alamat" rows="3" placeholder="Alamat lengkap pelanggan..."></textarea>
+                            <label for="add_alamat_lengkap" class="form-label">Alamat Lengkap *</label>
+                            <textarea class="form-control" id="add_alamat_lengkap" name="alamat_lengkap" rows="3" placeholder="Alamat lengkap pelanggan..." required></textarea>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -411,19 +411,19 @@ $pelanggan_list = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                 <input type="text" class="form-control" id="edit_nama_pelanggan" name="nama_pelanggan" required>
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label for="edit_no_telepon" class="form-label">No. Telepon *</label>
-                                <input type="tel" class="form-control" id="edit_no_telepon" name="no_telepon" required>
+                                <label for="edit_no_hp" class="form-label">No. HP *</label>
+                                <input type="tel" class="form-control" id="edit_no_hp" name="no_hp" required>
                             </div>
                         </div>
 
                         <div class="mb-3">
-                            <label for="edit_email" class="form-label">Email</label>
-                            <input type="email" class="form-control" id="edit_email" name="email" placeholder="contoh@email.com">
+                            <label for="edit_email" class="form-label">Email *</label>
+                            <input type="email" class="form-control" id="edit_email" name="email" placeholder="contoh@email.com" required>
                         </div>
 
                         <div class="mb-3">
-                            <label for="edit_alamat" class="form-label">Alamat</label>
-                            <textarea class="form-control" id="edit_alamat" name="alamat" rows="3" placeholder="Alamat lengkap pelanggan..."></textarea>
+                            <label for="edit_alamat_lengkap" class="form-label">Alamat Lengkap *</label>
+                            <textarea class="form-control" id="edit_alamat_lengkap" name="alamat_lengkap" rows="3" placeholder="Alamat lengkap pelanggan..." required></textarea>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -524,9 +524,9 @@ $pelanggan_list = $stmt->fetchAll(PDO::FETCH_ASSOC);
         function editItem(item) {
             document.getElementById('edit_id_pelanggan').value = item.id_pelanggan;
             document.getElementById('edit_nama_pelanggan').value = item.nama_pelanggan;
-            document.getElementById('edit_no_telepon').value = item.no_telepon;
+            document.getElementById('edit_no_hp').value = item.no_hp;
             document.getElementById('edit_email').value = item.email || '';
-            document.getElementById('edit_alamat').value = item.alamat || '';
+            document.getElementById('edit_alamat_lengkap').value = item.alamat_lengkap || '';
 
             var editModal = new bootstrap.Modal(document.getElementById('editModal'));
             editModal.show();
